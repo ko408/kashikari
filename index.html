@@ -620,7 +620,7 @@ function buildForm(id){
   '<button type="button" class="chip" data-action="due" data-d="14">2週間後</button>'+
   '<button type="button" class="chip" data-action="due" data-d="m1">1か月後</button>'+
   '<button type="button" class="chip" data-action="due" data-d="none">期限なし</button></div>'+
-  '<div class="field"><label for="f-note">メモ(任意)</label><input id="f-note" maxlength="80" placeholder="例: 飲み会の立て替え" value="'+esc(v.note)+'"></div>'+
+  '<div class="field"><label for="f-note">メモ(任意)</label><input id="f-note" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="例: 飲み会の立て替え" value="'+esc(v.note)+'"></div>'+
   '<p class="err" id="f-err" role="alert"></p>'+
   '<div class="actions"><button type="button" class="btn" data-action="close">キャンセル</button><button type="submit" class="btn primary">保存</button></div></form>';
   setTimeout(()=>{const n=$('#f-name');if(n&&!l)n.focus()},50);
