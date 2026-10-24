@@ -165,10 +165,6 @@ h1,h2,h3,p{margin:0}
 .empty .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
 .skel{display:grid;gap:10px;margin-top:22px}
 .skel div{height:74px;border-radius:var(--r);background:var(--surface-2)}
-.foot .bk{display:grid;gap:8px;margin-top:12px}
-.foot .bk-s{font-weight:700}
-.foot .bk.warn .bk-s{color:var(--danger)}
-.foot .bk-b{display:flex;gap:8px;flex-wrap:wrap}
 .foot{margin:26px 2px 0;font-size:12px;color:var(--muted);max-width:40em}
 
 /* buttons */
@@ -305,7 +301,6 @@ h1,h2,h3,p{margin:0}
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <datalist id="people"></datalist>
-<input type="file" id="bkFile" accept=".json,application/json" hidden>
 
 <script>
 (function(){
@@ -550,49 +545,11 @@ function renderContent(){
   }
   c.innerHTML=S.view==='people'?peopleHtml():loansHtml();
 }
-function markBackup(){try{localStorage.setItem('kashikari.lastBackup',today())}catch(e){}render();toast('バックアップを書き出しました')}
-async function exportBackup(){
-  const data={app:'kashikari',version:1,exportedAt:new Date().toISOString(),loans:S.loans.map(l=>Object.assign({id:l.id},toData(l)))};
-  const name='kashikari-backup-'+today()+'.json';
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  try{
-    const file=new File([blob],name,{type:'application/json'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      await navigator.share({files:[file],title:'貸し借りメモのバックアップ'});
-      markBackup();return;
-    }
-  }catch(e){if(e&&e.name==='AbortError')return}
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download=name;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-  markBackup();
-}
-async function importBackup(file){
-  try{
-    const d=JSON.parse(await file.text());
-    const arr=Array.isArray(d)?d:(d&&Array.isArray(d.loans)?d.loans:null);
-    if(!arr)throw new Error('format');
-    const have=new Set(S.loans.map(l=>l.id));
-    let n=0;
-    for(const x of arr){
-      const l=norm(x&&x.id?String(x.id):rid('l'),x);
-      if(l&&!have.has(l.id)){await store.save(l);have.add(l.id);n++}
-    }
-    toast(n?n+'件の記録を追加しました':'追加する記録はありませんでした');
-  }catch(e){toast('読み込めませんでした。書き出したバックアップのファイルを選んでください。')}
-}
 function renderFoot(){
   const f=$('#foot');
   if(!S.loaded||S.error){f.textContent='';return}
   if(S.mode==='cloud')f.textContent='記録はあなたのアカウントにだけ保存されます。他の人には見えません。';
-  else{
-    let lb=null;try{lb=localStorage.getItem('kashikari.lastBackup')}catch(e){}
-    const stale=!lb||diff(lb,today())>7;
-    f.innerHTML=esc('記録はこの端末のブラウザにだけ保存されます。ブラウザのデータを消すと失われます。'+(S.memoryOnly?' いまは保存できない状態なので、ページを閉じると消えます。':''))+
-      '<span class="bk'+(stale&&S.loans.length?' warn':'')+'"><span class="bk-s">'+(lb?'最後のバックアップ: '+fmtDate(lb):'まだバックアップしていません')+'</span>'+
-      '<span class="bk-b"><button type="button" class="chip" data-action="bkExport">記録を書き出す</button><button type="button" class="chip" data-action="bkImport">記録を読み込む</button></span></span>';
-  }
+  else f.textContent='記録はこの端末のブラウザにだけ保存されます。ブラウザのデータを消すと失われます。'+(S.memoryOnly?' いまは保存できない状態なので、ページを閉じると消えます。':'');
 }
 
 /* ---------- sheet ---------- */
@@ -908,8 +865,6 @@ document.addEventListener('click',async e=>{
       const nm=$('#f-name');if(!nm.value.trim())nm.focus();
       break;
     }
-    case 'bkExport':exportBackup();break;
-    case 'bkImport':$('#bkFile').click();break;
     case 'toastAct':{const fn=S.toastAct;S.toastAct=null;$('#toast').hidden=true;if(fn)fn();break}
   }
 });
@@ -934,7 +889,6 @@ $('#sheet').addEventListener('focusout',e=>{
   if(e.target.id==='s-n'){const n=parseInt(String(e.target.value).normalize('NFKC').replace(/[^\d]/g,''),10)||2;e.target.value=Math.min(99,Math.max(2,n));calcSplit()}
 });
 $('#sheet').addEventListener('input',e=>{if(e.target.id==='s-total'||e.target.id==='s-n')calcSplit()});
-$('#bkFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)importBackup(f)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.sheet)closeSheet()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.loaded)render()});
 
